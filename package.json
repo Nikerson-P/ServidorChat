@@ -1,0 +1,3 @@
+"script":{
+    "start": "node serverChat.js"
+}
