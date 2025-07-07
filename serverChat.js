@@ -16,9 +16,9 @@ io.on('connection',(socket)=>{
 
         const timeout = setTimeout(()=>{
             console.log('Inatividade do Cliente Id:'+socket.id);
-            //io.to(sala).emit('mensagem','desconectado');
+            
             socket.disconnect(true)
-        },1000*30*1)
+        },1000*60*5)
 
         socket.on('entrarSala',(sala)=>{
             socket.join(sala)
@@ -28,12 +28,12 @@ io.on('connection',(socket)=>{
         socket.on('mensagem',({sala,mensagemInput,usuarioAtual})=>{
             clearTimeout();
             io.to(sala).emit('mensagem',{mensagem:mensagemInput,usuario:usuarioAtual});
-            console.log(sala +'-'+mensagemInput+'-'+usuarioAtual);
+            
         })
         
 
         socket.on('disconnect',()=>{
-            console.log('Cliente Deslogado');
+            console.log('Cliente Deslogado' + socket.id);
 
         })
 
