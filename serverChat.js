@@ -14,13 +14,20 @@ const app = express()
 const server = http.createServer(app)
 const io = socket(server)
 
+const query = `  CREATE TABLE  IF NOT EXISTS messages (
+                  id SERIAL PRIMARY KEY,
+                  sender TEXT NOT NULL,
+                  receiver TEXT NOT NULL,
+                  content TEXT NOT NULL,
+                  sent_at TIMESTAMP DEFAULT NOW()
+                );`;
 
 async function testeConnection(){
     const client = await pool.connect();
     try{
         const res = await client.query('SELECT NOW()');
         console.log("Conexao bem sucedida",res.rows[0]);
-        
+        await client.query(query);
 
     }catch(err){
         console.error(err);
@@ -28,38 +35,24 @@ async function testeConnection(){
         client.release();
     }
 }
-async function salvar({sender,receiver,content}){
-    const client = await pool.connect();
-    try{
-        const result = await client.query(`INSERT INTO menssages(sender,receiver,content,room_id) VALUES ($1,$2,$3,$4)  RETURNING *;`,
-            [sender,receiver,content,gerarRoomId(sender,receiver)]
-        )
-
-    }catch(err){
-        console.log("Erro",err);
-    }
-}
-
-function gerarRoomId(user1, user2) {
-  return [user1, user2].sort().join('_');
-}
-
 io.on('connection',(socket)=>{
 
         const timeout = setTimeout(()=>{
             console.log('Inatividade do Cliente Id:'+socket.id);
+            
             socket.disconnect(true)
         },1000*60*5)
 
         socket.on('entrarSala',(sala)=>{
             socket.join(sala)
+            
             io.to(sala).emit('mensagem',`${socket.id} entrou na sala ${sala}`)
         })
 
-        socket.on('mensagem',({sender,receiver,content,room_id})=>{
+        socket.on('mensagem',({sala,mensagemInput,usuarioAtual})=>{
             clearTimeout();
-            io.to(sala).emit('mensagem',{sender:sender,receiver:receiver,content:content,room_id:room_id});
-            salvar(sender,receiver,content)
+            io.to(sala).emit('mensagem',{mensagem:mensagemInput,usuario:usuarioAtual});
+            
         })
         
 
